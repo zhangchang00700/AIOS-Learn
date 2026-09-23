@@ -1,0 +1,720 @@
+<!doctype html>
+<!-- 创建者：Trae · AIOS 学习 PWA · 安卓 12+ 可添加主屏幕离线使用 -->
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
+<meta name="theme-color" content="#0ea5e9"/>
+<meta name="description" content="把 TGT Super Agent 升级为 AIOS 内核的 12 周学习计划"/>
+<link rel="manifest" href="manifest.webmanifest"/>
+<link rel="icon" href="assets/icon-512.svg" type="image/svg+xml"/>
+<link rel="apple-touch-icon" href="assets/icon-512.svg"/>
+<title>AIOS · 操作系统开发学习</title>
+<style>
+/* ========= 设计系统 ========= */
+:root{
+  --bg:#0b1220; --bg-2:#111a2e; --bg-3:#1a2742;
+  --ink:#e6edf7; --ink-dim:#94a3b8; --ink-mute:#64748b;
+  --accent:#0ea5e9; --accent-2:#6366f1; --accent-3:#22d3ee;
+  --ok:#10b981; --warn:#f59e0b; --danger:#ef4444;
+  --bd:#1e293b; --bd-2:#263348;
+  --rad:14px; --pad:16px;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","HarmonyOS Sans","Noto Sans CJK SC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:var(--font);-webkit-tap-highlight-color:transparent;text-size-adjust:100%}
+body{padding-bottom:96px;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+a:active{opacity:.7}
+
+/* ========= 顶栏 ========= */
+.top{position:sticky;top:0;z-index:50;background:linear-gradient(180deg,var(--bg) 0%,rgba(11,18,32,.92) 100%);backdrop-filter:saturate(1.2) blur(10px);padding:calc(env(safe-area-inset-top)+10px) var(--pad) 12px;border-bottom:1px solid var(--bd)}
+.top-row{display:flex;align-items:center;gap:12px}
+.logo{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#0b1220;font-weight:800;font-size:14px}
+.title{font-size:17px;font-weight:700;letter-spacing:.3px}
+.sub{font-size:11px;color:var(--ink-dim);margin-top:2px}
+.progress{margin-top:10px;height:6px;background:var(--bg-3);border-radius:4px;overflow:hidden;position:relative}
+.progress-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--accent-3));transition:width .4s ease}
+.progress-text{position:absolute;right:6px;top:-18px;font-size:11px;color:var(--ink-dim)}
+
+/* ========= 导航 Tab ========= */
+.nav{position:fixed;bottom:0;left:0;right:0;z-index:50;background:rgba(17,26,46,.96);backdrop-filter:blur(12px);border-top:1px solid var(--bd);display:flex;justify-content:space-around;padding:8px 8px calc(8px + env(safe-area-inset-bottom))}
+.nav button{flex:1;background:none;border:none;color:var(--ink-mute);font-size:11px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:4px;border-radius:10px;font-family:var(--font)}
+.nav button.active{color:var(--accent)}
+.nav svg{width:22px;height:22px}
+
+/* ========= 容器 ========= */
+.page{padding:var(--pad);display:none;animation:fade .25s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ========= 组件 ========= */
+.card{background:var(--bg-2);border:1px solid var(--bd);border-radius:var(--rad);padding:var(--pad);margin-bottom:12px}
+.card h3{margin:0 0 6px;font-size:15px;font-weight:700}
+.card p{margin:0;color:var(--ink-dim);line-height:1.6;font-size:13px}
+.muted{color:var(--ink-mute);font-size:12px}
+
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--bg-3);color:var(--ink-dim);letter-spacing:.4px}
+.badge.ok{background:rgba(16,185,129,.15);color:var(--ok)}
+.badge.warn{background:rgba(245,158,11,.15);color:var(--warn)}
+.badge.danger{background:rgba(239,68,68,.15);color:var(--danger)}
+.badge.accent{background:rgba(14,165,233,.15);color:var(--accent)}
+
+.grid{display:grid;gap:10px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+
+.phase-card{display:flex;flex-direction:column;gap:10px;background:var(--bg-2);border:1px solid var(--bd);border-radius:var(--rad);padding:14px;text-align:left;appearance:none;width:100%;color:var(--ink);font-family:var(--font)}
+.phase-card:active{transform:scale(.98);border-color:var(--accent)}
+.phase-num{display:flex;justify-content:space-between;align-items:center}
+.phase-idx{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px}
+.phase-title{font-size:15px;font-weight:700;margin-top:2px}
+.phase-week{font-size:11px;color:var(--ink-dim)}
+.phase-desc{font-size:12px;color:var(--ink-mute);margin-top:4px;line-height:1.5}
+.phase-arrow{color:var(--ink-mute)}
+
+/* ========= Phase 详情页 ========= */
+.ph-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.back-btn{background:var(--bg-2);border:1px solid var(--bd);color:var(--ink);width:36px;height:36px;border-radius:10px;font-size:18px;display:grid;place-items:center;font-family:var(--font)}
+.ph-title{flex:1}
+.ph-title h2{margin:0;font-size:18px;font-weight:800}
+.ph-title p{margin:2px 0 0;color:var(--ink-dim);font-size:12px}
+
+.dd{border:1px solid var(--bd);border-radius:var(--rad);overflow:hidden;margin-bottom:10px;background:var(--bg-2)}
+.dd-b{padding:13px var(--pad);display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:13px;cursor:pointer;background:linear-gradient(180deg,var(--bg-3),var(--bg-2))}
+.dd-b .chev{transition:transform .25s}
+.dd.open .dd-b .chev{transform:rotate(180deg)}
+.dd-c{max-height:0;overflow:hidden;transition:max-height .35s ease}
+.dd.open .dd-c{max-height:2000px}
+.dd-c-inner{padding:0 var(--pad) var(--pad);color:var(--ink-dim);font-size:13px;line-height:1.7}
+.dd-c-inner h4{color:var(--ink);font-size:13px;margin:12px 0 4px}
+.dd-c-inner ul{padding-left:18px;margin:4px 0}
+.dd-c-inner li{margin:3px 0}
+.dd-c-inner code{background:var(--bg-3);padding:1px 5px;border-radius:4px;font-size:12px;color:var(--accent-3)}
+.dd-c-inner pre{background:#080d19;border:1px solid var(--bd);border-radius:8px;padding:10px;overflow:auto;font-size:11px;line-height:1.55}
+.dd-c-inner table{border-collapse:collapse;width:100%;font-size:12px;margin:6px 0}
+.dd-c-inner th,.dd-c-inner td{border:1px solid var(--bd);padding:6px 8px;text-align:left;vertical-align:top}
+.dd-c-inner th{background:var(--bg-3);color:var(--ink);font-weight:600}
+
+/* ========= Checklist ========= */
+.chk{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:var(--bg-2);border:1px solid var(--bd);border-radius:10px;margin-bottom:8px;cursor:pointer}
+.chk input{appearance:none;width:20px;height:20px;border:2px solid var(--bd-2);border-radius:5px;margin-top:2px;position:relative;flex-shrink:0;background:var(--bg-3)}
+.chk input:checked{background:var(--accent);border-color:var(--accent)}
+.chk input:checked::after{content:"✓";position:absolute;color:#0b1220;font-weight:800;font-size:13px;left:3px;top:-2px}
+.chk label{flex:1;font-size:13px;color:var(--ink-dim);line-height:1.5;cursor:pointer}
+.chk input:checked+label{color:var(--ink);text-decoration:line-through}
+
+/* ========= 里程碑 ========= */
+.milestone{position:relative;padding:12px var(--pad);background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(99,102,241,.08));border:1px solid rgba(14,165,233,.25);border-radius:var(--rad);margin-bottom:10px}
+.milestone .m-week{font-size:11px;color:var(--accent);font-weight:700;letter-spacing:1px}
+.milestone .m-title{font-size:15px;font-weight:700;margin-top:2px}
+.milestone .m-criteria{font-size:12px;color:var(--ink-dim);margin-top:4px}
+
+/* ========= Tabs inside phase ========= */
+.tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:4px}
+.tabs button{background:var(--bg-2);border:1px solid var(--bd);color:var(--ink-dim);padding:7px 12px;border-radius:8px;font-size:12px;white-space:nowrap;font-family:var(--font)}
+.tabs button.active{background:var(--bg-3);color:var(--ink);border-color:var(--accent)}
+
+/* ========= 资源卡片 ========= */
+.res{display:flex;gap:10px;align-items:flex-start;padding:10px;background:var(--bg-2);border:1px solid var(--bd);border-radius:10px;margin-bottom:8px}
+.res-icon{width:36px;height:36px;border-radius:9px;background:var(--bg-3);display:grid;place-items:center;font-size:18px;flex-shrink:0}
+.res-body{flex:1;min-width:0}
+.res-title{font-size:13px;font-weight:600;color:var(--ink)}
+.res-src{font-size:11px;color:var(--ink-mute);margin-top:2px}
+.res-note{font-size:12px;color:var(--ink-dim);margin-top:4px;line-height:1.5}
+
+/* ========= 底部固定 CTA ========= */
+.cta{position:fixed;left:0;right:0;bottom:76px;z-index:40;padding:8px var(--pad);display:flex;gap:8px}
+.cta button{flex:1;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0b1220;border:none;border-radius:12px;padding:12px;font-size:13px;font-weight:700;font-family:var(--font);box-shadow:0 8px 24px rgba(14,165,233,.35)}
+
+/* ========= 安装指引 ========= */
+.install-step{display:flex;gap:10px;margin-bottom:10px}
+.install-step .n{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0b1220;display:grid;place-items:center;font-weight:800;font-size:13px;flex-shrink:0}
+.install-step .b{flex:1;font-size:13px;color:var(--ink-dim);line-height:1.6}
+.install-step .b strong{color:var(--ink)}
+
+.safe{padding-top:env(safe-area-inset-top)}
+</style>
+</head>
+<body>
+
+<!-- ============ 顶栏 ============ -->
+<div class="top safe">
+  <div class="top-row">
+    <div class="logo">AI</div>
+    <div style="flex:1;min-width:0">
+      <div class="title">AIOS 操作系统开发学习</div>
+      <div class="sub">把 TGT 升级为 AIOS 内核 · 12 周</div>
+    </div>
+    <div class="badge accent">安卓 12+</div>
+  </div>
+  <div class="progress" title="学习进度（基于里程碑勾选）">
+    <div class="progress-fill" id="progressFill"></div>
+    <span class="progress-text" id="progressText">0%</span>
+  </div>
+</div>
+
+<!-- ============ 首页：Phase 卡片 ============ -->
+<div id="page-home" class="page active">
+  <div class="card">
+    <h3>🎯 目标</h3>
+    <p>把 TGT Super Agent（调度/门禁/记忆/进化的控制平面）升级为真正的 <b>AIOS 内核</b> — 具备进程管理、内存分层、LLM 上下文调度、工具链 IO、安全沙箱、自举进化的操作系统级能力。</p>
+    <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+      <span class="badge accent">12 周</span>
+      <span class="badge ok">7 个 Phase</span>
+      <span class="badge warn">0 mock</span>
+      <span class="badge">边学边做</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Phase 1 -->
+    <button class="phase-card" data-phase="1">
+      <div class="phase-num"><span class="phase-idx">PHASE 1</span><span class="phase-arrow">›</span></div>
+      <div class="phase-title">OS 基础补课</div>
+      <div class="phase-week">Week 1–2 · 2 周</div>
+      <div class="phase-desc">建立进程/调度/内存/IPC 的操作系统认知框架，映射到 TGT 现有代码</div>
+    </button>
+
+    <!-- Phase 2 -->
+    <button class="phase-card" data-phase="2">
+      <div class="phase-num"><span class="phase-idx">PHASE 2</span><span class="phase-arrow">›</span></div>
+      <div class="phase-title">进程模型 + 调度</div>
+      <div class="phase-week">Week 3–4</div>
+      <div class="phase-desc">Agent PCB / 调度算法 benchmark / context switch 显式建模</div>
+    </button>
+
+    <!-- Phase 3 -->
+    <button class="phase-card" data-phase="3">
+      <div class="phase-num"><span class="phase-idx">PHASE 3</span><span class="phase-arrow">›</span></div>
+      <div class="phase-title">内存分层体系</div>
+      <div class="phase-week">Week 5–6</div>
+      <div class="phase-desc">L1 scratchpad / L2 项目记忆 / L3 经验库 / RAM 技能 / Disk 归档</div>
+    </button>
+
+    <!-- Phase 4 -->
+    <button class="phase-card" data-phase="4">
+      <div class="phase-num"><span class="phase-idx">PHASE 4</span><span class="phase-arrow">›</span></div>
+      <div class="phase-title">LLM 上下文内核</div>
+      <div class="phase-week">Week 7–8 · ⭐ 最核心</div>
+      <div class="phase-desc">Kernel Image（系统提示词=内核镜像）+ 上下文压缩策略对比</div>
+    </button>
+
+    <!-- Phase 5 -->
+    <button class="phase-card" data-phase="5">
+      <div class="phase-num"><span class="phase-idx">PHASE 5</span><span class="phase-arrow">›</span></div>
+      <div class="phase-title">多 Agent 通信协议</div>
+      <div class="phase-week">Week 9</div>
+      <div class="phase-desc">ACL 协议栈：语义层/传输层/安全层/发现层</div>
+    </button>
+
+    <!-- Phase 6 -->
+    <button class="phase-card" data-phase="6">
+      <div class="phase-num"><span class="phase-idx">PHASE 6</span><span class="phase-arrow">›</span></div>
+      <div class="phase-title">安全沙箱 + 资源配额</div>
+      <div class="phase-week">Week 10</div>
+      <div class="phase-desc">RBAC / 资源熔断 / Tool 调用白名单 / 攻击向量防御清单</div>
+    </button>
+
+    <!-- Phase 7 -->
+    <button class="phase-card" data-phase="7">
+      <div class="phase-num"><span class="phase-idx">PHASE 7</span><span class="phase-arrow">›</span></div>
+      <div class="phase-title">自举进化闭环</div>
+      <div class="phase-week">Week 11–12</div>
+      <div class="phase-desc">内核自身可进化 + holdout A/B 评估 + Kernel Charter</div>
+    </button>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>💡 核心理念</h3>
+    <p><b>别把 AI 当"工具"，把它当"CPU"。</b>CPU 执行机器码 → LLM 执行自然语言指令；寄存器/缓存/RAM/磁盘 → LLM context / scratchpad / memory / archive；系统调用 → 工具调用；进程调度 → AgentLoop 调度。</p>
+  </div>
+</div>
+
+<!-- ============ Phase 详情页（动态注入） ============ -->
+<div id="page-phase" class="page">
+  <div class="ph-head">
+    <button class="back-btn" id="backBtn" aria-label="返回">‹</button>
+    <div class="ph-title">
+      <h2 id="phTitle">Phase X</h2>
+      <p id="phSub"></p>
+    </div>
+  </div>
+  <div id="phBody"></div>
+</div>
+
+<!-- ============ 映射 ============ -->
+<div id="page-map" class="page">
+  <div class="card">
+    <h3>🧭 TGT → AIOS 内核映射</h3>
+    <p>你现在的代码其实已经有了操作系统内核的雏形。下表帮你把每个 TGT 模块映射到经典 OS 概念 — 这是后续 Phase 架构的锚点。</p>
+  </div>
+
+  <div class="dd open">
+    <div class="dd-b"><span>操作系统概念 ↔ AIOS 等价 ↔ TGT 现状</span><span class="chev">▾</span></div>
+    <div class="dd-c open" style="max-height:none">
+      <div class="dd-c-inner">
+        <table>
+          <tr><th style="width:24%">OS 概念</th><th style="width:24%">AIOS 对应</th><th style="width:52%">TGT 现状 / 差距</th></tr>
+          <tr><td>Process / PCB</td><td><b>Agent PCB</b>（运行态元数据）</td><td>TgtTask 表 + output JSON；缺：寄存器快照 = 当前 context</td></tr>
+          <tr><td>Scheduler</td><td><b>AI 任务调度器</b></td><td>BullMQ FIFO + 优先级；缺：CFS 权重调度 / context 切换成本感知</td></tr>
+          <tr><td>Context Switch</td><td>AgentLoop 切换</td><td>无显式切换开销模型；缺：context 快照 → resume 成本</td></tr>
+          <tr><td>CPU Registers</td><td><b>LLM 内部 context</b></td><td>AgentLoop 自带，无显式管理</td></tr>
+          <tr><td>L1 Cache</td><td><b>会话级 scratchpad</b></td><td>CronMemory 部分覆盖；缺：生命周期管理</td></tr>
+          <tr><td>L2 Cache</td><td><b>项目级记忆</b></td><td>TgtMemory 表全量 Prisma；缺：pgvector 索引 / 向量搜索</td></tr>
+          <tr><td>L3 Cache</td><td><b>跨项目经验库</b></td><td>ExperienceExtractor/Injector 雏形 ✅</td></tr>
+          <tr><td>RAM</td><td><b>技能库</b></td><td>SkillRegistry 31 个已加载 ✅</td></tr>
+          <tr><td>Disk</td><td><b>历史归档</b></td><td>LoopArchive + 每月压缩 ✅</td></tr>
+          <tr><td>Syscall</td><td><b>工具调用</b></td><td>ToolRegistry ✅；缺：securityLevel + 二次确认</td></tr>
+          <tr><td>Kernel Image</td><td><b>系统提示词内核</b></td><td>散落在各处；缺：版本化 + 可热替换</td></tr>
+          <tr><td>IPC</td><td><b>B2B 通信协议</b></td><td>Redis Pub/Sub + HMAC ✅；缺：ACL 语义层 / ttl / priority / 去重</td></tr>
+          <tr><td>Filesystem</td><td><b>Worktree 管理</b></td><td>Git worktree 已有；缺：配额 / 自动清理</td></tr>
+          <tr><td>Interrupt / Signal</td><td><b>墙钟超时 / BLOCKED</b></td><td>wallClockTimeout ✅；缺：显式 SIGKILL/SIGSTOP/SIGCONT 语义</td></tr>
+          <tr><td>User / Group / RBAC</td><td>Agent 权限模型</td><td>有租户隔离；缺：per-Agent 工具权限矩阵</td></tr>
+          <tr><td>Resource Quota</td><td><b>Token 预算 + 熔断</b></td><td>LLMCost 追踪；缺：per-Agent 自动熔断</td></tr>
+          <tr><td>Self-evolving Kernel</td><td><b>GEPA 内核化</b></td><td>技能进化 ✅；缺：Kernel Image + Policy 可进化</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 资源 ============ -->
+<div id="page-res" class="page">
+  <div class="card">
+    <h3>📚 持续阅读清单</h3>
+    <p>Phase 标注 = 对应学习阶段。每条都有"为什么值得读"的说明，不浪费你的时间。</p>
+  </div>
+  <div class="res">
+    <div class="res-icon">📖</div>
+    <div class="res-body">
+      <div class="res-title">《操作系统概念》Silberschatz · 教材</div>
+      <div class="res-src">Phase 1 · 建议版本：10th / 9th</div>
+      <div class="res-note">进程、调度、内存、IPC、文件系统的教科书。Phase 1 的锚点，后续所有 AIOS 抽象的源头。免费 PDF 不难找，或者图书馆。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">🧊</div>
+    <div class="res-body">
+      <div class="res-title">《深入理解计算机系统》CSAPP · 第 3/5/8/10 章</div>
+      <div class="res-src">Phase 1-2</div>
+      <div class="res-note">第 3 章汇编、第 5 章并发、第 8 章虚拟内存、第 10 章系统调用。把抽象 OS 和真实硬件连起来。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">🗄️</div>
+    <div class="res-body">
+      <div class="res-title">Designing Data-Intensive Applications (DDIA) · 第 11 章</div>
+      <div class="res-src">Phase 5</div>
+      <div class="res-note">数据密集型应用的 IPC / 一致性 / 消息模式。多 Agent 通信协议栈设计的参考。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">🔗</div>
+    <div class="res-body">
+      <div class="res-title">LangGraph · Stateful Agent Runtime</div>
+      <div class="res-src">Phase 2 / 4 · <a href="https://langchain-ai.github.io/langgraph/" target="_blank">官方文档</a></div>
+      <div class="res-note">最接近 OS 的 Agent runtime：stateful graph + checkpoint + human-in-the-loop。Agent PCB / context switch 的直接参考。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">🤖</div>
+    <div class="res-body">
+      <div class="res-title">AutoGen 0.4 · Agent Chat Kernel</div>
+      <div class="res-src">Phase 2 / 5 · <a href="https://arxiv.org/abs/2402.01680" target="_blank">论文</a></div>
+      <div class="res-note">Microsoft 的 group chat orchestration — 多 Agent 进程间通信和角色分工的参考实现。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">🧠</div>
+    <div class="res-body">
+      <div class="res-title">MemGPT · Hierarchical LLM Memory</div>
+      <div class="res-src">Phase 3 · <a href="https://arxiv.org/abs/2310.08560" target="_blank">论文</a></div>
+      <div class="res-note">最系统的 LLM 内存管理方案 — 内存分层 + context window paging。Phase 3 的直接对标。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">💬</div>
+    <div class="res-body">
+      <div class="res-title">Zep · LLM Memory Infrastructure</div>
+      <div class="res-src">Phase 3 · <a href="https://getzep.github.io/" target="_blank">官网</a></div>
+      <div class="res-note">session memory + document collections + entity facts 的开源实现，可直接复用。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">🖥️</div>
+    <div class="res-body">
+      <div class="res-title">Anthropic Computer Use · 论文</div>
+      <div class="res-src">Phase 4 · <a href="https://arxiv.org/abs/2402.03168" target="_blank">论文</a></div>
+      <div class="res-note">LLM 当"CPU"直接操作电脑的范式 — Agent 与 IO 设备交互的设计参考。</div>
+    </div>
+  </div>
+  <div class="res">
+    <div class="res-icon">🐧</div>
+    <div class="res-body">
+      <div class="res-title">Linux Kernel Module Programming Guide</div>
+      <div class="res-src">Phase 1 · <a href="https://tldp.org/LDP/lkmpg/2.6/html/" target="_blank">TLDP</a></div>
+      <div class="res-note">选读：理解内核 vs 用户态边界、系统调用、进程生命周期。</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 里程碑 ============ -->
+<div id="page-milestone" class="page">
+  <div class="card">
+    <h3>🎯 里程碑检查清单</h3>
+    <p>每个 Phase 末的验收标准。勾选状态保存在浏览器 localStorage。</p>
+  </div>
+
+  <div class="milestone">
+    <div class="m-week">WEEK 2 · 末</div>
+    <div class="m-title">AIOS 内核映射文档</div>
+    <div class="m-criteria">写出 <code>docs/AIOS_KERNEL_MAPPING.md</code>，每个 TGT 模块 → OS 概念</div>
+  </div>
+
+  <label class="chk"><input type="checkbox" data-m="w2"/><span>W2 末交付 <code>docs/AIOS_KERNEL_MAPPING.md</code></span></label>
+  <label class="chk"><input type="checkbox" data-m="w2-ok"/><span>每个 TGT 模块都找到对应的 OS 概念</span></label>
+
+  <div class="milestone">
+    <div class="m-week">WEEK 4 · 末</div>
+    <div class="m-title">调度 benchmark</div>
+    <div class="m-criteria">跑通 CFS vs FIFO 对比，有 throughput / latency 数据</div>
+  </div>
+
+  <label class="chk"><input type="checkbox" data-m="w4-bench"/><span>写出 benchmark 脚本并跑出数据</span></label>
+  <label class="chk"><input type="checkbox" data-m="w4-cfs"/><span>实现 CFS 权重调度算法原型</span></label>
+
+  <div class="milestone">
+    <div class="m-week">WEEK 6 · 末</div>
+    <div class="m-title">内存命中率</div>
+    <div class="m-criteria">L1 / L2 hit rate benchmark 跑完，有数据</div>
+  </div>
+
+  <label class="chk"><input type="checkbox" data-m="w6-pgvector"/><span>给 TgtMemory 加 pgvector 索引 + 语义搜索</span></label>
+  <label class="chk"><input type="checkbox" data-m="w6-hitrate"/><span>跑出 L1 / L2 hit rate benchmark 数据</span></label>
+
+  <div class="milestone">
+    <div class="m-week">WEEK 8 · 末</div>
+    <div class="m-title">Kernel Image v1</div>
+    <div class="m-criteria">可版本化的 system prompt 内核，LLM 调用走 Kernel Image 加载</div>
+  </div>
+
+  <label class="chk"><input type="checkbox" data-m="w8-ki"/><span>Prisma 新增 KernelImage 表 + KernelImageService</span></label>
+  <label class="chk"><input type="checkbox" data-m="w8-ki-eval"/><span>3 种 context 压缩策略 benchmark 跑完</span></label>
+
+  <div class="milestone">
+    <div class="m-week">WEEK 9 · 末</div>
+    <div class="m-title">多 Agent IPC benchmark</div>
+    <div class="m-criteria">10 Agent × 100 消息 · 端到端延迟 + 丢失率</div>
+  </div>
+
+  <label class="chk"><input type="checkbox" data-m="w9-acl"/><span>ACL 协议类型系统（TaskCreated/HelpNeeded/ContextRequest/Reply）</span></label>
+  <label class="chk"><input type="checkbox" data-m="w9-ipc-bench"/><span>跑出 10 Agent × 100 msg 的端到端 benchmark</span></label>
+
+  <div class="milestone">
+    <div class="m-week">WEEK 12 · 末</div>
+    <div class="m-title">自举进化闭环</div>
+    <div class="m-criteria">Kernel Image + Skill + Policy 三种进化目标都能走通 evaluation → merge</div>
+  </div>
+
+  <label class="chk"><input type="checkbox" data-m="w12-target"/><span>GEPA 引擎支持 EvolutionTarget 多目标（kernel-image / skill / policy）</span></label>
+  <label class="chk"><input type="checkbox" data-m="w12-holdout"/><span>holdout A/B baseline 自动化</span></label>
+  <label class="chk"><input type="checkbox" data-m="w12-charter"/><span>写出《AIOS Kernel Charter》</span></label>
+</div>
+
+<!-- ============ 安装 ============ -->
+<div id="page-install" class="page">
+  <div class="card">
+    <h3>📲 安装到安卓手机</h3>
+    <p>这是一个 PWA APP，零后端依赖、离线可用、数据全部保存在本地浏览器。3 步装好：</p>
+  </div>
+
+  <div class="install-step"><div class="n">1</div><div class="b"><strong>本地开一个静态服务器</strong>：在项目根目录执行 <code>cd apps/aios-learn && python -m http.server 8080</code> 或 <code>npx serve .</code>。也可以直接用我们已经部署的 <code>apps/aios-learn</code> 子目录。</div></div>
+
+  <div class="install-step"><div class="n">2</div><div class="b"><strong>手机和电脑连同一个 Wi-Fi</strong>，Chrome 打开 <code>http://电脑局域网IP:8080</code>，等 1-2 秒让 Service Worker 注册完成。</div></div>
+
+  <div class="install-step"><div class="n">3</div><div class="b"><strong>Chrome 菜单 → "添加到主屏幕"</strong>，或菜单 → "安装应用"。安装后有独立图标、全屏运行、离线可用。</div></div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>📦 或者：打包成原生 APK</h3>
+    <p>如果你有 Android Studio 或 Capacitor CLI，也可以把这个 PWA 打包成带原生图标和启动屏的 APK。</p>
+    <div style="margin-top:8px">
+      <code style="background:var(--bg-3);padding:6px 10px;border-radius:6px;display:block;font-size:12px">
+npm i -D @capacitor/cli @capacitor/android<br>
+npx cap init aios-learn com.tgt.aioslearn<br>
+npx cap add android<br>
+cp apps/aios-learn/* www/<br>
+npx cap sync android<br>
+npx cap open android
+      </code>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 底部导航 ============ -->
+<div class="nav">
+  <button data-page="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>首页</button>
+  <button data-page="phase"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16"/></svg>Phase</button>
+  <button data-page="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z M9 3v15 M15 6v15"/></svg>映射</button>
+  <button data-page="res"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20 M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>资源</button>
+  <button data-page="milestone"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4 M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>检查</button>
+  <button data-page="install"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4 M5 21h14"/></svg>安装</button>
+</div>
+
+<script>
+/* ============ 数据：7 个 Phase 详情 ============ */
+const PHASES = {
+1: {
+  title: 'Phase 1 · OS 基础补课',
+  sub: 'Week 1–2 · 2 周 · 建立认知框架',
+  sections: [
+    { t: '🎯 目标', c: `<p>你已经能写调度器和队列，但可能缺少对"为什么要这样设计"的系统性理解。Phase 1 帮你补上 OS 基础这块砖 — 不是从零学编程，而是<strong>把你现有代码放进 OS 概念的坐标系里</strong>。</p>` },
+    { t: '📅 每日主题', c: `
+<table>
+<tr><th>天</th><th>主题</th><th>产出</th></tr>
+<tr><td>D1-2</td><td>经典 OS 进程模型</td><td>画一张 <b>TGT AgentLoop ↔ OS 进程</b> 的映射图</td></tr>
+<tr><td>D3-4</td><td>CPU 调度算法</td><td>对比 BullMQ vs Linux CFS 的优劣</td></tr>
+<tr><td>D5-6</td><td>内存层次</td><td>TGT MemoryStore 对应 OS 哪层？缺了什么？</td></tr>
+<tr><td>D7</td><td>IPC 机制</td><td>TGT B2B Redis Pub/Sub ↔ 经典 IPC 模式</td></tr>
+<tr><td>D8-9</td><td>文件系统抽象</td><td>TGT worktree 管理 ↔ OS 文件系统</td></tr>
+<tr><td>D10</td><td>中断/异常/信号</td><td>TGT wallClockTimeout + BLOCKED/FAILED 对应什么？</td></tr>
+</table>` },
+    { t: '📖 核心阅读', c: `
+<ul>
+<li>《操作系统概念》Silberschatz · 第 3 章（进程）第 6 章（CPU 调度）第 8-9 章（内存管理 + 虚拟内存）第 4 章（线程/IPC）</li>
+<li>《深入理解计算机系统》第 3/5/8/10 章（选读）</li>
+<li>Linux Kernel Module Programming Guide · TLDP（选读）</li>
+</ul>` },
+    { t: '🧱 落地任务', c: `
+<ol>
+<li><b>写 <code>docs/AIOS_KERNEL_MAPPING.md</code></b>：每个 TGT 模块映射到 OS 概念 — 这是后续 Phase 的架构锚点</li>
+<li>把 D1-D10 的主题笔记整理进这份文档</li>
+</ol>` }
+  ]
+},
+2: {
+  title: 'Phase 2 · 进程模型 + 调度',
+  sub: 'Week 3–4 · APCB + CFS 权重调度',
+  sections: [
+    { t: '🎯 目标', c: `<p>把 TGT 的 "task → state machine → worker" 升级为真正的 <b>AIOS 进程抽象</b>。对标 OS Process Control Block (PCB)。</p>` },
+    { t: '📐 概念对标', c: `
+<table>
+<tr><th>OS 概念</th><th>AIOS 对应</th><th>TGT 现状</th><th>要加什么</th></tr>
+<tr><td>PCB</td><td><b>Agent PCB (APCB)</b></td><td>TgtTask + output JSON</td><td>把运行态元数据结构化：寄存器快照=当前 context / 文件描述符=工具会话 / 优先级=renice / 信号=SIGKILL SIGSTOP</td></tr>
+<tr><td>Scheduler</td><td>AI 任务调度器</td><td>BullMQ FIFO + 优先级</td><td>CFS 权重调度（长任务降权 / 短任务优先） + deadline 抢占 + context switch 成本感知</td></tr>
+<tr><td>Context Switch</td><td>AgentLoop 切换</td><td>无显式开销模型</td><td>显式建模：AgentLoop pause 时快照 context → resume 时重新加载</td></tr>
+</table>` },
+    { t: '🧱 动手', c: `
+<ol>
+<li>新建 <code>src/aios/apcb.ts</code>：<code>interface APCB</code>，迁移 TgtTask 运行态字段</li>
+<li>写调度算法 benchmark：对比 FIFO / 优先级 / CFS 在 7 个队列上的 throughput / latency</li>
+<li>给 AgentLoop 加 checkpoint/resume：turn-end 保存到 Redis Stream，pause 后任意 worker 可 resume</li>
+</ol>` },
+    { t: '🔗 开源参考', c: `
+<ul>
+<li><b>LangGraph</b>（最接近 OS 的 Agent runtime）：<a href="https://langchain-ai.github.io/langgraph/" target="_blank">langchain-ai.github.io/langgraph</a> — stateful graph + checkpoint + human-in-the-loop</li>
+<li><b>AutoGen 0.4</b>（Microsoft）：<a href="https://arxiv.org/abs/2402.01680" target="_blank">arXiv:2402.01680</a> — group chat orchestration</li>
+<li><b>CrewAI</b>：crew = team, agent = process, task = job</li>
+</ul>` }
+  ]
+},
+3: {
+  title: 'Phase 3 · 内存分层体系',
+  sub: 'Week 5–6 · L1 scratchpad → L3 经验库',
+  sections: [
+    { t: '🎯 目标', c: `<p>从"一个 MemoryStore 存所有东西"升级为 <b>AIOS 内存层次</b> — 每一层有不同延迟和容量，自动降级。</p>` },
+    { t: '📐 分层对标', c: `
+<table>
+<tr><th>OS 层次</th><th>AIOS 对应</th><th>TGT 现状</th></tr>
+<tr><td>CPU Registers (ns)</td><td><b>LLM 内部 context</b></td><td>AgentLoop 自带，无显式管理</td></tr>
+<tr><td>L1 Cache</td><td><b>会话级 scratchpad</b></td><td>CronMemory 部分覆盖，缺生命周期</td></tr>
+<tr><td>L2 Cache</td><td><b>项目级记忆</b></td><td>TgtMemory 表，全量 Prisma，缺 pgvector</td></tr>
+<tr><td>L3 Cache</td><td><b>跨项目经验库</b></td><td>ExperienceExtractor/Injector ✅</td></tr>
+<tr><td>RAM</td><td><b>技能库</b></td><td>SkillRegistry 31 个 ✅</td></tr>
+<tr><td>Disk</td><td><b>历史归档</b></td><td>LoopArchive + 每月压缩 ✅</td></tr>
+</table>` },
+    { t: '🧱 动手', c: `
+<ol>
+<li>给 TgtMemory 加 <b>pgvector 索引</b>：语义搜索替代全量 Prisma 查询</li>
+<li>实现 L1/L2 Cache 惰性降级：<code>get(key) → L1 miss → L2 → hit 回填 L1</code></li>
+<li>写内存命中率 benchmark：最近 7 天任务的 L1/L2/L3 hit rate</li>
+</ol>` },
+    { t: '🔗 开源参考', c: `
+<ul>
+<li><b>MemGPT</b>（系统级 LLM 内存）：<a href="https://arxiv.org/abs/2310.08560" target="_blank">arXiv:2310.08560</a> — tiered hierarchy + context window paging</li>
+<li><b>Zep</b>：<a href="https://getzep.github.io/" target="_blank">getzep.github.io</a> — session memory + doc collections + entity facts</li>
+<li><b>LlamaIndex</b>：RAG 框架 — vector store + query transformation</li>
+</ul>` }
+  ]
+},
+4: {
+  title: 'Phase 4 · LLM 上下文内核 ⭐',
+  sub: 'Week 7–8 · 最核心 · Kernel Image',
+  sections: [
+    { t: '🎯 目标', c: `<p>这是 <b>AIOS 区别于传统 OS 的根本</b>：CPU 执行 LLM inference，context window 是内存，prompt 是机器指令。</p>
+<p>那么：Syscall = 工具调用；Kernel Image = 系统提示词 + 技能注入 + 安全护栏；Context Window = CPU 寄存器 + Cache + RAM；Instruction = 用户 query + 工作记忆。</p>` },
+    { t: '📅 每周主题', c: `
+<ul>
+<li><b>W7 · Context Window 管理策略</b>：对比 3 种 — truncation（砍老消息）/ summarization（摘要压缩）/ selection（只保留相关 chunk）。用 TGT 历史 LoopSession 做 benchmark。</li>
+<li><b>W8 · Prompt Engineering 内核</b>：系统提示词抽象为 <b>Kernel Image</b>（可版本化 + 可热替换），Agent 运行时加载对应版本，加进程级 args + 环境变量。</li>
+</ul>` },
+    { t: '🧱 动手', c: `
+<ol>
+<li>新建 <code>src/aios/kernel-image.ts</code>：<code>interface KernelImage</code>（system prompt 模板 + 技能装配 + policy 注入），Prism 新表 <code>KernelImage</code></li>
+<li>实现 <b>summarization context 压缩</b>：AgentLoop turn N 后把 turn 1..N/2 用 LLM 摘要成一段 <code>[历史摘要]</code>，保留 turn N/2..N 原始对话</li>
+<li>benchmark：相同任务，不同策略下的 token 消耗 + 正确率</li>
+</ol>` },
+    { t: '🔗 开源参考', c: `
+<ul>
+<li><b>Anthropic Computer Use</b>：<a href="https://arxiv.org/abs/2402.03168" target="_blank">arXiv:2402.03168</a> — LLM 当 CPU 直接操作电脑的范式</li>
+<li><b>LangGraph</b> checkpoint 模式 — context paging 参考</li>
+</ul>` }
+  ]
+},
+5: {
+  title: 'Phase 5 · 多 Agent 通信协议',
+  sub: 'Week 9 · ACL 协议栈',
+  sections: [
+    { t: '🎯 目标', c: `<p>从"B2B 发消息"升级为 <b>AIOS IPC 协议栈</b>。对应 OS 的 socket / pipe / shared memory。</p>` },
+    { t: '📐 协议栈', c: `
+<table>
+<tr><th>层</th><th>协议</th><th>说明</th></tr>
+<tr><td>L7</td><td><b>Agent Chat Protocol (ACL)</b></td><td>请求/响应/订阅/广播 + 语义类型（TaskCreated / HelpNeeded / ContextRequest / ContextReply）</td></tr>
+<tr><td>L4</td><td>传输层</td><td>Redis Pub/Sub（实时）+ Redis Stream（持久化队列）+ HTTP（外部 API）</td></tr>
+<tr><td>L3</td><td>安全层</td><td>HMAC-SHA256 签名 + 消息序号防重放 + B2B_SECRET 轮换</td></tr>
+<tr><td>L2</td><td>发现层</td><td>Agent 注册 + 健康检查心跳 + 自动路由</td></tr>
+</table>` },
+    { t: '🧱 动手', c: `
+<ol>
+<li>扩展 <code>B2BMessageEnvelope</code>：加 <code>ttl</code>（过期）+ <code>priority</code>（紧急/普通/低）+ <code>dedupeKey</code>（幂等去重）</li>
+<li>实现 ACL 语义层类型系统：<code>type ACLMessage = TaskCreated | HelpNeeded | ContextRequest | ContextReply | ...</code></li>
+<li>benchmark：10 Agent × 100 消息，端到端延迟 + 丢失率</li>
+</ol>` }
+  ]
+},
+6: {
+  title: 'Phase 6 · 安全沙箱 + 资源配额',
+  sub: 'Week 10 · RBAC + 熔断 + 攻击向量防御',
+  sections: [
+    { t: '🎯 目标', c: `<p>AIOS 的安全模型：Agent = User，Kernel = Root，Skill = Syscall，Tool = IO Device。</p>` },
+    { t: '📐 安全概念对标', c: `
+<table>
+<tr><th>OS 安全</th><th>AIOS 对应</th></tr>
+<tr><td>User/Group 权限</td><td>Agent RBAC（谁能调哪些工具）</td></tr>
+<tr><td>Seccomp/Sandbox</td><td>Tool 调用白名单 + schema 校验 + 敏感操作二次确认</td></tr>
+<tr><td>Resource Quota</td><td>Token 预算 + CPU 时间（wallClock）+ API 频率</td></tr>
+<tr><td>Audit Log</td><td>已有的 audit 日志（再加 LLM 推理审计）</td></tr>
+<tr><td>Namespace</td><td>Tenant 隔离（多租户隔离是最高优先级）</td></tr>
+</table>` },
+    { t: '🧱 动手', c: `
+<ol>
+<li>新建 <code>src/aios/resource-quota.ts</code>：per-Agent per-project token 预算 + 熔断（日消费超 N 元自动暂停）</li>
+<li>给 Skill Registry 加安全级：<code>skill.securityLevel: 'safe' | 'caution' | 'dangerous'</code>，dangerous 级需要 approver</li>
+<li>写《攻击向量防御清单》：prompt injection / tool poisoning / exfiltration / resource exhaustion — 每项配 TGT 里的防御代码位置</li>
+</ol>` }
+  ]
+},
+7: {
+  title: 'Phase 7 · 自举进化闭环',
+  sub: 'Week 11–12 · Kernel Charter',
+  sections: [
+    { t: '🎯 目标', c: `<p>从"技能进化"升级为 <b>AIOS 自举进化</b> — 内核自身可进化。你已经有 GEPA，差的就是把它内核化。</p>` },
+    { t: '📐 进化范围', c: `
+<table>
+<tr><th>目标</th><th>可进化？</th><th>说明</th></tr>
+<tr><td>Kernel Image（system prompt）</td><td>✅ 是</td><td>变异 + 评估 + holdout A/B</td></tr>
+<tr><td>Skill 文件</td><td>✅ 是</td><td>你已有</td></tr>
+<tr><td>Policy（安全/门禁）</td><td>✅ 是</td><td>新增</td></tr>
+<tr><td>内核 C/TS 代码</td><td>❌ 绝对不可进化</td><td>类似 Linux kernel 不可被用户态修改</td></tr>
+</table>` },
+    { t: '🧱 动手', c: `
+<ol>
+<li>把 Kernel Image 纳入进化范围：GEPA 引擎支持 <code>EvolutionTarget</code> 多目标</li>
+<li>holdout A/B baseline 自动化：每次 kernel-image 变异后跑固定 10 个任务对比</li>
+<li>写出《AIOS Kernel Charter》：什么可以进化、什么绝对不可以</li>
+</ol>` }
+  ]
+}
+};
+
+/* ============ SPA 路由 ============ */
+const pages = { home:'page-home', phase:'page-phase', map:'page-map', res:'page-res', milestone:'page-milestone', install:'page-install' };
+
+function show(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(pages[id]).classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active', b.dataset.page===id));
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+document.querySelectorAll('.nav button').forEach(b=>b.onclick = ()=> show(b.dataset.page));
+
+/* ============ Phase 卡片 → Phase 详情 ============ */
+document.querySelectorAll('.phase-card').forEach(btn=>{
+  btn.onclick = ()=>{
+    const n = btn.dataset.phase;
+    const p = PHASES[n];
+    document.getElementById('phTitle').textContent = p.title;
+    document.getElementById('phSub').textContent = p.sub;
+    const body = document.getElementById('phBody');
+    body.innerHTML = p.sections.map((s,i)=>`
+      <div class="dd ${i===0?'open':''}">
+        <div class="dd-b"><span>${s.t}</span><span class="chev">▾</span></div>
+        <div class="dd-c ${i===0?'open':''}" style="max-height:${i===0?'2000px':'0'}">
+          <div class="dd-c-inner">${s.c}</div>
+        </div>
+      </div>`).join('');
+    body.querySelectorAll('.dd').forEach(dd=>{
+      dd.querySelector('.dd-b').onclick = ()=>{
+        dd.classList.toggle('open');
+        const inner = dd.querySelector('.dd-c');
+        if(dd.classList.contains('open')) inner.style.maxHeight = '2000px';
+        else inner.style.maxHeight = '0';
+      };
+    });
+    show('phase');
+  };
+});
+
+document.getElementById('backBtn').onclick = ()=> show('home');
+
+/* ============ Checklist 持久化 ============ */
+const LS_KEY = 'aios-learn-progress-v1';
+let progress = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+const chks = Array.from(document.querySelectorAll('#page-milestone .chk input'));
+chks.forEach(cb=>{
+  cb.checked = !!progress[cb.dataset.m];
+  cb.onchange = ()=>{
+    progress[cb.dataset.m] = cb.checked;
+    localStorage.setItem(LS_KEY, JSON.stringify(progress));
+    updateProgress();
+  };
+});
+function updateProgress(){
+  const total = chks.length, done = chks.filter(c=>c.checked).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progressFill').style.width = pct+'%';
+  document.getElementById('progressText').textContent = done+'/'+total+'  ·  '+pct+'%';
+}
+updateProgress();
+
+/* ============ DD 手动展开（映射页） ============ */
+document.querySelectorAll('.dd-b').forEach(b=>{
+  b.onclick = ()=>{
+    const dd = b.parentElement;
+    const c = dd.querySelector('.dd-c');
+    dd.classList.toggle('open');
+    if(dd.classList.contains('open')) c.style.maxHeight = '2000px'; else c.style.maxHeight = '0';
+  };
+});
+
+/* ============ Service Worker ============ */
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+
+/* ============ 默认 Tab ============ */
+show('home');
+</script>
+</body>
+</html>
